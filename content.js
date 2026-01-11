@@ -1,7 +1,7 @@
 // YouTube Focus Mode Content Script
 
 // Keywords for distracting content
-const distractingKeywords = ['vlog', 'prank', 'reaction', 'comedy', 'roast', 'entertainment', 'daily life'];
+const distractingKeywords = ['vlog', 'prank', 'reaction', 'comedy', 'roast', 'entertainment', 'daily life', 'food', 'cooking', 'recipe', 'mukbang', 'challenge', 'dance', 'music', 'song', 'lyrics', 'review', 'unboxing', 'haul', 'asmr', 'gaming', 'gameplay', 'stream', 'live', 'podcast', 'interview', 'celebrity', 'gossip', 'drama', 'news', 'politics', 'sports', 'football', 'cricket', 'basketball', 'tennis'];
 
 // Keywords for educational content (overrides distracting)
 const educationalKeywords = ['tutorial', 'course', 'lecture', 'programming', 'coding', 'tech', 'computer science', 'engineering', 'math'];
@@ -21,9 +21,13 @@ function hideShorts() {
   const shortsShelves = document.querySelectorAll('ytd-rich-shelf-renderer[is-shorts]');
   shortsShelves.forEach(shelf => shelf.style.display = 'none');
 
-  // Hide Shorts in sidebar
-  const sidebarShorts = document.querySelectorAll('ytd-guide-entry-renderer a[href="/shorts"]');
-  sidebarShorts.forEach(item => item.closest('ytd-guide-entry-renderer').style.display = 'none');
+  // Hide Shorts in sidebar (more robust selectors)
+  const sidebarShorts = document.querySelectorAll('ytd-guide-entry-renderer a[href="/shorts"], ytd-guide-entry-renderer [title="Shorts"], ytd-guide-entry-renderer');
+  sidebarShorts.forEach(item => {
+    if (item.textContent.includes('Shorts') || item.querySelector('a[href="/shorts"]')) {
+      item.style.display = 'none';
+    }
+  });
 
   // Hide Shorts in search results
   const searchShorts = document.querySelectorAll('ytd-video-renderer a[href*="/shorts/"]');
@@ -32,6 +36,14 @@ function hideShorts() {
   // Hide Shorts on channel pages
   const channelShorts = document.querySelectorAll('ytd-grid-video-renderer a[href*="/shorts/"]');
   channelShorts.forEach(video => video.closest('ytd-grid-video-renderer').style.display = 'none');
+
+  // Hide Shorts tab on channel pages
+  const shortsTabs = document.querySelectorAll('tp-yt-paper-tab[aria-label*="Shorts"], tp-yt-paper-tab');
+  shortsTabs.forEach(tab => {
+    if (tab.textContent.includes('Shorts')) {
+      tab.style.display = 'none';
+    }
+  });
 }
 
 // Function to filter distracting videos
