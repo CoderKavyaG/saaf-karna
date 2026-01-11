@@ -1,7 +1,7 @@
 // YouTube Focus Mode Content Script
 
-// Keywords for distracting content
-const distractingKeywords = ['vlog', 'prank', 'reaction', 'comedy', 'roast', 'entertainment', 'daily life', 'food', 'cooking', 'recipe', 'mukbang', 'challenge', 'dance', 'music', 'song', 'lyrics', 'review', 'unboxing', 'haul', 'asmr', 'gaming', 'gameplay', 'stream', 'live', 'podcast', 'interview', 'celebrity', 'gossip', 'drama', 'news', 'politics', 'sports', 'football', 'cricket', 'basketball', 'tennis'];
+// Keywords for distracting content (focused on core distractions)
+const distractingKeywords = ['vlog', 'comedy', 'roast', 'entertainment', 'daily life', 'challenge', 'dance', 'review', 'unboxing', 'haul', 'gaming', 'gameplay', 'stream', 'live', 'celebrity', 'gossip', 'drama', 'news', 'politics', 'sports'];
 
 // Keywords for educational content (overrides distracting)
 const educationalKeywords = ['tutorial', 'course', 'lecture', 'programming', 'coding', 'tech', 'computer science', 'engineering', 'math'];
@@ -46,7 +46,7 @@ function hideShorts() {
   });
 }
 
-// Function to filter distracting videos
+// Function to filter distracting videos (disable instead of hide)
 function filterVideos() {
   // Select all video renderers
   const videos = document.querySelectorAll('ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer');
@@ -63,7 +63,38 @@ function filterVideos() {
         // If not educational, check for distracting keywords
         const hasDistracting = distractingKeywords.some(keyword => title.includes(keyword.toLowerCase()));
         if (hasDistracting) {
-          video.style.display = 'none';
+          // Disable clicking by adding overlay and preventing pointer events
+          video.style.position = 'relative';
+          video.style.pointerEvents = 'none';
+          video.style.opacity = '0.5';
+
+          // Add a semi-transparent overlay to indicate disabled
+          let overlay = video.querySelector('.focus-mode-overlay');
+          if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.className = 'focus-mode-overlay';
+            overlay.style.position = 'absolute';
+            overlay.style.top = '0';
+            overlay.style.left = '0';
+            overlay.style.width = '100%';
+            overlay.style.height = '100%';
+            overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.3)';
+            overlay.style.zIndex = '10';
+            overlay.style.display = 'flex';
+            overlay.style.alignItems = 'center';
+            overlay.style.justifyContent = 'center';
+            overlay.style.color = 'white';
+            overlay.style.fontSize = '14px';
+            overlay.style.fontWeight = 'bold';
+            overlay.textContent = 'FOCUS MODE: Disabled';
+            video.appendChild(overlay);
+          }
+        } else {
+          // Re-enable if previously disabled but now allowed
+          video.style.pointerEvents = '';
+          video.style.opacity = '';
+          const overlay = video.querySelector('.focus-mode-overlay');
+          if (overlay) overlay.remove();
         }
       }
     }
