@@ -1,10 +1,10 @@
 // YouTube Focus Mode Content Script
 
 // Keywords for distracting content (focused on core distractions)
-const distractingKeywords = ['vlog', 'comedy', 'roast', 'entertainment', 'daily life', 'challenge', 'dance', 'review', 'unboxing', 'haul', 'gaming', 'gameplay', 'stream', 'live', 'celebrity', 'gossip', 'drama', 'news', 'politics', 'sports'];
+const distractingKeywords = ['vlog', 'comedy', 'roast', 'entertainment', 'daily life', 'challenge', 'dance', 'review', 'unboxing', 'haul', 'gaming', 'gameplay', 'stream', 'live', 'celebrity', 'gossip', 'drama', 'news', 'politics', 'sports', 'game', 'food', 'trailer', 'movie', 'reaction'];
 
 // Keywords for educational content (overrides distracting)
-const educationalKeywords = ['tutorial', 'course', 'lecture', 'programming', 'coding', 'tech', 'computer science', 'engineering', 'math'];
+const educationalKeywords = ['tutorial', 'course', 'lecture', 'programming', 'coding', 'tech', 'computer science', 'engineering', 'math', 'leetcode', 'productive', 'silicon valley'];
 
 // Function to check if focus mode is enabled
 function isFocusModeEnabled() {
@@ -21,13 +21,11 @@ function hideShorts() {
   const shortsShelves = document.querySelectorAll('ytd-rich-shelf-renderer[is-shorts]');
   shortsShelves.forEach(shelf => shelf.style.display = 'none');
 
-  // Disable Shorts in sidebar (more robust selectors)
-  const sidebarShorts = document.querySelectorAll('ytd-guide-entry-renderer a[href="/shorts"], ytd-guide-entry-renderer [title="Shorts"], ytd-guide-entry-renderer');
+  // Hide Shorts in sidebar (more robust selectors for all modes)
+  const sidebarShorts = document.querySelectorAll('ytd-guide-entry-renderer a[href="/shorts"], ytd-guide-entry-renderer [title="Shorts"], ytd-guide-entry-renderer, a[href="/shorts"], [href="/shorts"]');
   sidebarShorts.forEach(item => {
-    if (item.textContent.includes('Shorts') || item.querySelector('a[href="/shorts"]')) {
-      item.style.pointerEvents = 'none';
-      item.style.opacity = '0.5';
-      item.style.cursor = 'not-allowed';
+    if (item.textContent && item.textContent.includes('Shorts') || item.href && item.href.includes('/shorts') || item.querySelector('a[href="/shorts"]')) {
+      item.style.display = 'none';
     }
   });
 
@@ -103,11 +101,23 @@ function filterVideos() {
   });
 }
 
+// Function to block Shorts URL access
+function blockShortsURL() {
+  if (window.location.pathname.startsWith('/shorts')) {
+    // Redirect to YouTube home or show a message
+    document.body.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100vh; font-size:24px; color:red;">Focus Mode: Shorts are blocked!</div>';
+    setTimeout(() => {
+      window.location.href = 'https://www.youtube.com';
+    }, 2000);
+  }
+}
+
 // Main function to apply filters
 async function applyFilters() {
   const enabled = await isFocusModeEnabled();
   if (!enabled) return;
 
+  blockShortsURL();
   hideShorts();
   filterVideos();
 }
