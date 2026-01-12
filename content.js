@@ -21,11 +21,13 @@ function hideShorts() {
   const shortsShelves = document.querySelectorAll('ytd-rich-shelf-renderer[is-shorts]');
   shortsShelves.forEach(shelf => shelf.style.display = 'none');
 
-  // Hide Shorts in sidebar (more robust selectors)
+  // Disable Shorts in sidebar (more robust selectors)
   const sidebarShorts = document.querySelectorAll('ytd-guide-entry-renderer a[href="/shorts"], ytd-guide-entry-renderer [title="Shorts"], ytd-guide-entry-renderer');
   sidebarShorts.forEach(item => {
     if (item.textContent.includes('Shorts') || item.querySelector('a[href="/shorts"]')) {
-      item.style.display = 'none';
+      item.style.pointerEvents = 'none';
+      item.style.opacity = '0.5';
+      item.style.cursor = 'not-allowed';
     }
   });
 

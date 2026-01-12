@@ -7,15 +7,27 @@
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <div class="container">
-    <img src="icon.png" alt="Focus Icon" class="focus-icon">
-    <h1>YouTube Focus Mode</h1>
-    <p>Block distracting content and stay focused on learning</p>
-    <label class="switch">
-      <input type="checkbox" id="focusToggle">
-      <span class="slider"></span>
-    </label>
-    <p id="status">Focus Mode: OFF</p>
+  <div class="popup-container">
+    <header class="header">
+      <img src="icon.png" alt="Focus Icon" class="icon">
+      <h1 class="title">YouTube Focus Mode</h1>
+    </header>
+    <div class="content">
+      <p class="description">Eliminate distractions and focus on what matters most.</p>
+      <div class="toggle-section">
+        <span class="toggle-label">Enable Focus Mode</span>
+        <label class="modern-switch">
+          <input type="checkbox" id="focusToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="status-card" id="statusCard">
+        <span id="statusText">Focus Mode is Disabled</span>
+      </div>
+    </div>
+    <footer class="footer">
+      <p>Stay productive on YouTube!</p>
+    </footer>
   </div>
   <script src="popup.js"></script>
 </body>
