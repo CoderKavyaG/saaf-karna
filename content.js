@@ -22,9 +22,17 @@ function hideShorts() {
   shortsShelves.forEach(shelf => shelf.style.display = 'none');
 
   // Hide Shorts in sidebar (more robust selectors for all modes)
-  const sidebarShorts = document.querySelectorAll('ytd-guide-entry-renderer a[href="/shorts"], ytd-guide-entry-renderer [title="Shorts"], ytd-guide-entry-renderer, a[href="/shorts"], [href="/shorts"]');
+  const sidebarShorts = document.querySelectorAll('ytd-guide-entry-renderer a[href="/shorts"], ytd-guide-entry-renderer [title="Shorts"], ytd-guide-entry-renderer, a[href="/shorts"], [href="/shorts"], ytd-guide-entry-renderer *');
   sidebarShorts.forEach(item => {
-    if (item.textContent && item.textContent.includes('Shorts') || item.href && item.href.includes('/shorts') || item.querySelector('a[href="/shorts"]')) {
+    if (item.textContent && item.textContent.trim().toLowerCase().includes('shorts') || item.href && item.href.includes('/shorts') || item.querySelector('a[href="/shorts"]')) {
+      item.style.display = 'none';
+    }
+  });
+
+  // Hide any element with text "Shorts"
+  const allShorts = document.querySelectorAll('*');
+  allShorts.forEach(item => {
+    if (item.textContent && item.textContent.trim().toLowerCase().includes('shorts') && item.tagName !== 'SCRIPT' && item.tagName !== 'STYLE') {
       item.style.display = 'none';
     }
   });
@@ -40,19 +48,19 @@ function hideShorts() {
   // Hide Shorts tab on channel pages
   const shortsTabs = document.querySelectorAll('tp-yt-paper-tab[aria-label*="Shorts"], tp-yt-paper-tab');
   shortsTabs.forEach(tab => {
-    if (tab.textContent.includes('Shorts')) {
+    if (tab.textContent && tab.textContent.toLowerCase().includes('shorts')) {
       tab.style.display = 'none';
     }
   });
 }
 
-// Function to filter distracting videos (disable instead of hide)
+// Function to filter distracting videos (hide completely)
 function filterVideos() {
   // Select all video renderers
   const videos = document.querySelectorAll('ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer');
 
   videos.forEach(video => {
-    const titleElement = video.querySelector('#video-title, .ytd-video-meta-block #title');
+    const titleElement = video.querySelector('#video-title, .ytd-video-meta-block #title, h3 a, h3');
     if (titleElement) {
       const title = titleElement.textContent.toLowerCase();
 
@@ -63,39 +71,15 @@ function filterVideos() {
         // If not educational, check for distracting keywords
         const hasDistracting = distractingKeywords.some(keyword => title.includes(keyword.toLowerCase()));
         if (hasDistracting) {
-          // Disable clicking by adding overlay and preventing pointer events
-          video.style.position = 'relative';
-          video.style.pointerEvents = 'none';
-          video.style.opacity = '0.5';
-
-          // Add a semi-transparent overlay to indicate disabled
-          let overlay = video.querySelector('.focus-mode-overlay');
-          if (!overlay) {
-            overlay = document.createElement('div');
-            overlay.className = 'focus-mode-overlay';
-            overlay.style.position = 'absolute';
-            overlay.style.top = '0';
-            overlay.style.left = '0';
-            overlay.style.width = '100%';
-            overlay.style.height = '100%';
-            overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.3)';
-            overlay.style.zIndex = '10';
-            overlay.style.display = 'flex';
-            overlay.style.alignItems = 'center';
-            overlay.style.justifyContent = 'center';
-            overlay.style.color = 'white';
-            overlay.style.fontSize = '14px';
-            overlay.style.fontWeight = 'bold';
-            overlay.textContent = 'FOCUS MODE: Disabled';
-            video.appendChild(overlay);
-          }
+          // Hide the video completely
+          video.style.display = 'none';
         } else {
-          // Re-enable if previously disabled but now allowed
-          video.style.pointerEvents = '';
-          video.style.opacity = '';
-          const overlay = video.querySelector('.focus-mode-overlay');
-          if (overlay) overlay.remove();
+          // Show if previously hidden but now allowed
+          video.style.display = '';
         }
+      } else {
+        // Show if educational
+        video.style.display = '';
       }
     }
   });
