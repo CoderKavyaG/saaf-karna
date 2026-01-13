@@ -1,37 +1,40 @@
-// YouTube Focus Mode Popup Script
+// YouTube Shorts Blocker Popup Script
+
+console.log('[SHORTS BLOCKER] Popup script loaded');
 
 document.addEventListener('DOMContentLoaded', () => {
   const toggle = document.getElementById('focusToggle');
   const statusText = document.getElementById('statusText');
   const statusCard = document.getElementById('statusCard');
 
-  // Load current state
-  chrome.storage.sync.get(['focusModeEnabled'], (result) => {
-    const enabled = result.focusModeEnabled || false;
+  // Load current state - default to ENABLED
+  chrome.storage.sync.get(['shortsBlockerEnabled'], (result) => {
+    // Default: enabled (true)
+    const enabled = result.shortsBlockerEnabled !== false;
     toggle.checked = enabled;
     updateStatus(enabled);
+    console.log('[SHORTS BLOCKER] Popup loaded - enabled:', enabled);
   });
 
   // Handle toggle change
   toggle.addEventListener('change', () => {
     const enabled = toggle.checked;
-    chrome.storage.sync.set({ focusModeEnabled: enabled }, () => {
+    chrome.storage.sync.set({ shortsBlockerEnabled: enabled }, () => {
       updateStatus(enabled);
-      // Notify content script to update
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        if (tabs[0] && tabs[0].url.includes('youtube.com')) {
-          chrome.tabs.reload(tabs[0].id);
-        }
-      });
+      console.log('[SHORTS BLOCKER] Toggle changed to:', enabled);
     });
   });
 
   function updateStatus(enabled) {
-    statusText.textContent = enabled ? 'Focus Mode is Enabled' : 'Focus Mode is Disabled';
     if (enabled) {
+      statusText.textContent = 'Shorts Blocker is ACTIVE';
       statusCard.classList.add('enabled');
+      statusCard.classList.remove('disabled');
     } else {
+      statusText.textContent = 'Shorts Blocker is DISABLED';
       statusCard.classList.remove('enabled');
+      statusCard.classList.add('disabled');
     }
   }
 });
+

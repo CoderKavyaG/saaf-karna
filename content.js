@@ -1,132 +1,162 @@
-// YouTube Focus Mode Content Script
+// ============================================================================
+// YOUTUBE SHORTS BLOCKER - CONTENT SCRIPT v6.0
+// ============================================================================
 
-// Keywords for distracting content (focused on core distractions)
-const distractingKeywords = ['vlog', 'comedy', 'roast', 'entertainment', 'daily life', 'challenge', 'dance', 'review', 'unboxing', 'haul', 'gaming', 'gameplay', 'stream', 'live', 'celebrity', 'gossip', 'drama', 'news', 'politics', 'sports', 'game', 'food', 'trailer', 'movie', 'reaction'];
+console.log('[SHORTS BLOCKER] Content script loaded');
 
-// Keywords for educational content (overrides distracting)
-const educationalKeywords = ['tutorial', 'course', 'lecture', 'programming', 'coding', 'tech', 'computer science', 'engineering', 'math', 'leetcode', 'productive', 'silicon valley'];
+// Get enabled state
+let isEnabled = true;
 
-// Function to check if focus mode is enabled
-function isFocusModeEnabled() {
-  return new Promise((resolve) => {
-    chrome.storage.sync.get(['focusModeEnabled'], (result) => {
-      resolve(result.focusModeEnabled || false);
-    });
-  });
-}
+chrome.storage.sync.get('shortsBlockerEnabled', (result) => {
+  isEnabled = result.shortsBlockerEnabled !== false;
+  console.log('[SHORTS BLOCKER] Enabled state:', isEnabled);
+});
 
-// Function to hide Shorts sections
-function hideShorts() {
-  // Hide Shorts shelf on homepage
-  const shortsShelves = document.querySelectorAll('ytd-rich-shelf-renderer[is-shorts]');
-  shortsShelves.forEach(shelf => shelf.style.display = 'none');
+// ============================================================================
+// MAIN BLOCKING FUNCTION - REMOVE UI ELEMENTS
+// ============================================================================
+function blockAllShorts() {
+  if (!isEnabled) return;
 
-  // Hide Shorts in sidebar (more robust selectors for all modes)
-  const sidebarShorts = document.querySelectorAll('ytd-guide-entry-renderer a[href="/shorts"], ytd-guide-entry-renderer [title="Shorts"], ytd-guide-entry-renderer, a[href="/shorts"], [href="/shorts"], ytd-guide-entry-renderer *');
-  sidebarShorts.forEach(item => {
-    if (item.textContent && item.textContent.trim().toLowerCase().includes('shorts') || item.href && item.href.includes('/shorts') || item.querySelector('a[href="/shorts"]')) {
-      item.style.display = 'none';
-    }
-  });
+  let blockedCount = 0;
 
-  // Hide any element with text "Shorts"
-  const allShorts = document.querySelectorAll('*');
-  allShorts.forEach(item => {
-    if (item.textContent && item.textContent.trim().toLowerCase().includes('shorts') && item.tagName !== 'SCRIPT' && item.tagName !== 'STYLE') {
-      item.style.display = 'none';
-    }
-  });
-
-  // Hide Shorts in search results
-  const searchShorts = document.querySelectorAll('ytd-video-renderer a[href*="/shorts/"]');
-  searchShorts.forEach(video => video.closest('ytd-video-renderer').style.display = 'none');
-
-  // Hide Shorts on channel pages
-  const channelShorts = document.querySelectorAll('ytd-grid-video-renderer a[href*="/shorts/"]');
-  channelShorts.forEach(video => video.closest('ytd-grid-video-renderer').style.display = 'none');
-
-  // Hide Shorts tab on channel pages
-  const shortsTabs = document.querySelectorAll('tp-yt-paper-tab[aria-label*="Shorts"], tp-yt-paper-tab');
-  shortsTabs.forEach(tab => {
-    if (tab.textContent && tab.textContent.toLowerCase().includes('shorts')) {
-      tab.style.display = 'none';
-    }
-  });
-}
-
-// Function to filter distracting videos (hide completely)
-function filterVideos() {
-  // Select all video renderers
-  const videos = document.querySelectorAll('ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer');
-
-  videos.forEach(video => {
-    const titleElement = video.querySelector('#video-title, .ytd-video-meta-block #title, h3 a, h3');
-    if (titleElement) {
-      const title = titleElement.textContent.toLowerCase();
-
-      // Check for educational keywords first
-      const hasEducational = educationalKeywords.some(keyword => title.includes(keyword.toLowerCase()));
-
-      if (!hasEducational) {
-        // If not educational, check for distracting keywords
-        const hasDistracting = distractingKeywords.some(keyword => title.includes(keyword.toLowerCase()));
-        if (hasDistracting) {
-          // Hide the video completely
-          video.style.display = 'none';
-        } else {
-          // Show if previously hidden but now allowed
-          video.style.display = '';
-        }
-      } else {
-        // Show if educational
-        video.style.display = '';
+  // ====== 1. REMOVE SIDEBAR SHORTS BUTTON ======
+  document.querySelectorAll('ytd-guide-entry-renderer').forEach((entry) => {
+    if (!entry.hasAttribute('data-blocked')) {
+      const text = entry.textContent.trim();
+      const link = entry.querySelector('a');
+      const href = link ? link.href : '';
+      
+      // Check if this is the Shorts button
+      if (text === 'Shorts' || href.includes('/shorts')) {
+        console.log('[SHORTS BLOCKER] REMOVING sidebar Shorts button');
+        entry.setAttribute('data-blocked', 'true');
+        entry.remove();
+        blockedCount++;
       }
     }
   });
-}
 
-// Function to block Shorts URL access
-function blockShortsURL() {
-  if (window.location.pathname.startsWith('/shorts')) {
-    // Redirect to YouTube home or show a message
-    document.body.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100vh; font-size:24px; color:red;">Focus Mode: Shorts are blocked!</div>';
-    setTimeout(() => {
-      window.location.href = 'https://www.youtube.com';
-    }, 2000);
+  // ====== 2. BLOCK CLICKS ON ANY /shorts LINK ======
+  document.querySelectorAll('a[href*="/shorts"]').forEach((link) => {
+    if (!link.hasAttribute('data-blocked')) {
+      link.setAttribute('data-blocked', 'true');
+      
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('[SHORTS BLOCKER] BLOCKED /shorts link click');
+        return false;
+      }, true);
+    }
+  });
+
+  // ====== 3. REMOVE SHORTS SHELF FROM FEED ======
+  
+  // Type 1: Rich shelf with is-shorts
+  document.querySelectorAll('ytd-rich-shelf-renderer[is-shorts="true"]').forEach((shelf) => {
+    if (!shelf.hasAttribute('data-blocked')) {
+      console.log('[SHORTS BLOCKER] REMOVING Shorts shelf');
+      shelf.setAttribute('data-blocked', 'true');
+      shelf.remove();
+      blockedCount++;
+    }
+  });
+
+  // Type 2: Reel shelf
+  document.querySelectorAll('ytd-reel-shelf-renderer').forEach((shelf) => {
+    if (!shelf.hasAttribute('data-blocked')) {
+      console.log('[SHORTS BLOCKER] REMOVING reel shelf');
+      shelf.setAttribute('data-blocked', 'true');
+      shelf.remove();
+      blockedCount++;
+    }
+  });
+
+  // Type 3: Any section with "Shorts" heading
+  document.querySelectorAll('h2, h3').forEach((heading) => {
+    if (heading.textContent.trim() === 'Shorts') {
+      const section = heading.closest('ytd-rich-shelf-renderer, ytd-horizontal-list-renderer, [role="region"]');
+      if (section && !section.hasAttribute('data-blocked')) {
+        console.log('[SHORTS BLOCKER] REMOVING Shorts section');
+        section.setAttribute('data-blocked', 'true');
+        section.remove();
+        blockedCount++;
+      }
+    }
+  });
+
+  if (blockedCount > 0) {
+    console.log(`[SHORTS BLOCKER] Removed ${blockedCount} Shorts UI elements`);
   }
 }
 
-// Main function to apply filters
-async function applyFilters() {
-  const enabled = await isFocusModeEnabled();
-  if (!enabled) return;
+// ============================================================================
+// MUTATION OBSERVER
+// ============================================================================
+function setupObserver() {
+  let debounceTimer;
 
-  blockShortsURL();
-  hideShorts();
-  filterVideos();
+  const observer = new MutationObserver(() => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      blockAllShorts();
+    }, 100);
+  });
+
+  observer.observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+    attributes: false,
+    characterData: false
+  });
+
+  console.log('[SHORTS BLOCKER] Mutation observer activated');
 }
 
-// Set up MutationObserver to handle dynamically loaded content
-const observer = new MutationObserver((mutations) => {
-  mutations.forEach(() => {
-    applyFilters();
-  });
-});
+// ============================================================================
+// INITIALIZATION
+// ============================================================================
+function init() {
+  console.log('[SHORTS BLOCKER] Initializing content script');
+  
+  blockAllShorts();
+  setupObserver();
+  
+  // Aggressive checking for first 10 seconds
+  let checkCount = 0;
+  const interval = setInterval(() => {
+    blockAllShorts();
+    checkCount++;
+    if (checkCount >= 20) {
+      clearInterval(interval);
+      setInterval(blockAllShorts, 2000);
+    }
+  }, 500);
 
-// Start observing when DOM is ready
+  console.log('[SHORTS BLOCKER] Content script initialized');
+}
+
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    observer.observe(document.body, { childList: true, subtree: true });
-    applyFilters();
-  });
+  document.addEventListener('DOMContentLoaded', init);
 } else {
-  observer.observe(document.body, { childList: true, subtree: true });
-  applyFilters();
+  init();
 }
 
-// Listen for storage changes to update immediately
+// Also run immediately
+setTimeout(init, 50);
+
+// Listen for storage changes
 chrome.storage.onChanged.addListener((changes) => {
-  if (changes.focusModeEnabled) {
-    location.reload(); // Simple way to reapply filters
+  if (changes.shortsBlockerEnabled) {
+    isEnabled = changes.shortsBlockerEnabled.newValue !== false;
+    console.log('[SHORTS BLOCKER] Settings changed - enabled:', isEnabled);
+    if (isEnabled) {
+      blockAllShorts();
+    }
   }
 });
+
+console.log('[SHORTS BLOCKER] Content script ready');
+
+
